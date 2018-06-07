@@ -83,3 +83,7 @@ class CanvasLogin():
         print ('res headers:', login_res_3.headers)
         print ('res cookie:', requests.utils.dict_from_cookiejar(login_res_3.cookies))
 
+
+if __name__ == '__main__':
+    login_test = CanvasLogin()
+    login_test.login()
