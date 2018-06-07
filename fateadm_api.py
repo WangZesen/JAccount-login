@@ -12,7 +12,7 @@ FATEA_PRED_URL  = "http://pred.fateadm.com"
 
 def LOG(log):
     # 不需要测试时，注释掉日志就可以了
-    #print(log);
+    print(log);
     log = None;
 
 class TmpObj():
@@ -215,33 +215,35 @@ class FateadmApi():
             LOG("charge failed ret: {} err: {}".format( rsp.ret_code, rsp.err_msg.encode('utf-8')));
         return rsp;
 
-def TestFunc():
-    pd_id           = "100000";     #用户信息页可以查询到pd信息
-    pd_key          = "123456";
-    app_id          = "100001";     #开发者分成用的账号，在开发者中心可以查询到
-    app_key         = "123456";
+def GetCapcha(file_name):
+    pd_id           = "103558";     #用户信息页可以查询到pd信息
+    pd_key          = "QfTD0qFhCLo5Av3jq1FIwKfDZyviv9TM";
+    app_id          = "303758";     #开发者分成用的账号，在开发者中心可以查询到
+    app_key         = "QiZzxQAT6+87b629iQRbNU4s9wWlFM4n";
     #识别类型，
     #具体类型可以查看官方网站的价格页选择具体的类型，不清楚类型的，可以咨询客服
-    pred_type       = "30400";
+    pred_type       = "20500";
     api             = FateadmApi(app_id, app_key, pd_id, pd_key);
     api.QueryBalc();
     #如果不是通过文件识别，则调用Predict接口
-    file_name       = "img.jpg";
+    #file_name       = "test.jpeg";
     rsp             = api.PredictFromFile( pred_type, file_name);
+    return rsp.pred_rsp.value
+    '''
     just_flag    = False;
     if just_flag :
         if rsp.ret_code == 0:
             #识别的结果如果与预期不符，可以调用这个接口将预期不符的订单退款
             # 退款仅在正常识别出结果后，无法通过网站验证的情况，请勿非法或者滥用，否则可能进行封号处理
             api.Justice( rsp.request_id);
-
+    '''
     #card_id         = "123";
     #card_key        = "123";
     #充值
     #api.Charge(card_id, card_key);
-    LOG("print in testfunc");
+    #LOG("print in testfunc");
 
 if __name__ == "__main__":
-    TestFunc();
+    GetCapcha('test.jpg');
 
 
