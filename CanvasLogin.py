@@ -2,7 +2,8 @@ from urllib.parse import urlparse
 from lxml import etree
 import fateadm_api
 import requests
-
+import config
+import os
 
 class CanvasLogin():
     def __init__(self):
@@ -16,27 +17,47 @@ class CanvasLogin():
             'Accept-Language': 'en,zh-CN;q=0.9,zh;q=0.8',
             'Referer': 'https://www.umjicanvas.com/login/canvas'
         }
+        self.login_status = self._recover()
 
-    def logout():
+    def _recover(self):
+        #
+        # TODO: Recover session after some time of disconnection
+        #
+
+        cookies_dir = config.cache_dir + 'CanvasLogin/cookies.txt'
+        if os.path.exists(cookies_dir):
+            with open(cookies_dir, 'r') as f:
+                self.cookies = eval(f.read())
+            if 'JAAuthCookie' in self.cookies:
+                #
+                # TODO: Verify the cookies is not expired
+                #
+                return True
+            else:
+                return False
+
+        pass
+
+    def logout(self):
         #
         # TODO: Use 'https://www.umjicanvas.com/logout' to logout
         #
 
         self.__init__()
 
-    def login_jaccount():
+    def login_jaccount(self):
         login_url_0 = 'https://www.umjicanvas.com/login/openid_connect'
-        login_res_0 = self.session.get(login_url_0, allow_redirects = False, cookies = cookies, headers = headers)
+        login_res_0 = self.session.get(login_url_0, allow_redirects = False, cookies = self.cookies, headers = self.headers)
         login_cookies_0 = requests.utils.dict_from_cookiejar(login_res_0.cookies)
         self.cookies.update(login_cookies_0)
 
         login_url_1 = login_res_0.headers['Location']
-        login_res_1 = self.session.get(login_url_1, allow_redirects = False, cookies = cookies, headers = headers)
+        login_res_1 = self.session.get(login_url_1, allow_redirects = False, cookies = self.cookies, headers = self.headers)
         login_cookies_1 = requests.utils.dict_from_cookiejar(login_res_1.cookies)
         self.cookies.update(login_cookies_1)
 
         login_url_2 = login_res_1.headers['Location']
-        login_res_2 = self.session.get(login_url_2, allow_redirects = False, cookies = cookies, headers = headers)
+        login_res_2 = self.session.get(login_url_2, allow_redirects = False, cookies = self.cookies, headers = self.headers)
         login_cookies_2 = requests.utils.dict_from_cookiejar(login_res_2.cookies)
         self.cookies.update(login_cookies_2)
 
@@ -44,8 +65,8 @@ class CanvasLogin():
         captcha_xpath = '//*[@id="form-input"]/div[3]/img'
         captcha_src = selector.xpath('//*[@id="form-input"]/div[3]/img')[0].attrib['src']
         captcha_src = 'https://jaccount.sjtu.edu.cn/jaccount/' + captcha_src
-        captcha_res = self.session.get(captcha_src, headers = headers)
-        
+        captcha_res = self.session.get(captcha_src, headers = self.headers)
+
         captcha_file = open('test.jpg', 'wb')
         captcha_file.write(captcha_res.content)
         captcha_file.close()
@@ -73,21 +94,37 @@ class CanvasLogin():
             'captcha': captcha_value
         }
 
-        login_res_3 = self.session.post(login_url_3, allow_redirects = False, data = login_data, cookies = cookies, headers = headers)
+        while True:
+            login_res_3 = self.session.post(login_url_3, allow_redirects = False, data = login_data, cookies = self.cookies, headers = self.headers)
+            login_cookies_3 = requests.utils.dict_from_cookiejar(login_res_3.cookies)
 
-        tem_f = open('test.html', 'wb')
-        tem_f.write(login_res_3.content)
-        tem_f.close()
+            '''
+            with open('test.html', 'wb') as f:
+                f.write(login_res_3.content)
+            '''
 
-        #
-        # TODO: Deal with login failure due to wrong captcha
-        #
+            #
+            # TODO: Deal with login failure due to wrong captcha
+            #
 
-        print ('cookies:', self.cookies)
-        print ('res headers:', login_res_3.headers)
-        print ('res cookie:', requests.utils.dict_from_cookiejar(login_res_3.cookies))
+            if login_res_3.headers['Location'].endswith('err=1'):
+                login_res_2 = login_res_3
+                #
+                # TODO: Get new captcha
+                #
+                print ('Wrong Captcha!')
+                login_data['captcha'] = input('Captcha: ')
+            else:
+                break
+
+        self.cookies.update(login_cookies_3)
+        cookies_dir = config.cache_dir + 'CanvasLogin/cookies.txt'
+        with open(cookies_dir, 'w') as f:
+            f.write(str(self.cookies))
+
+        print ('res cookie:', login_res_3)
 
 
 if __name__ == '__main__':
     login_test = CanvasLogin()
-    login_test.login()
+    login_test.login_jaccount()
